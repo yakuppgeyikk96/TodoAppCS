@@ -1,0 +1,11 @@
+
+
+.vscode/
+
+appsettings.json
+appsettings.Development.json
+bin/
+obj/
+
+
+Migrations/
