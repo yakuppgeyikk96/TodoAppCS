@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using FirstWebApi.Data;
 using FirstWebApi.DTOs;
 using FirstWebApi.Models;
@@ -5,23 +6,35 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FirstWebApi.Services;
 
-public class TodoService(ApplicationDbContext context, ILogger<TodoService> logger) : ITodoService
+public class TodoService(ApplicationDbContext context, IHttpContextAccessor httpContextAccessor) : ITodoService
 {
   private readonly ApplicationDbContext _context = context;
-  private readonly ILogger<TodoService> _logger = logger;
+  private readonly IHttpContextAccessor _httpContextAccessor = httpContextAccessor;
+
+  private int GetUserId()
+  {
+    var userIdClaim = _httpContextAccessor.HttpContext?.User
+      .FindFirstValue(ClaimTypes.NameIdentifier) ?? "0";
+    return int.Parse(userIdClaim ?? "0");
+  }
 
   public async Task<IEnumerable<TodoDto>> GetAllTodosAsync()
   {
+    int userId = GetUserId();
+
     var todos = await _context.Todos
-        .OrderByDescending(t => t.CreatedAt)
-        .ToListAsync();
+      .Where(t => t.UserId == userId)
+      .ToListAsync();
 
     return todos.Select(MapToDto);
   }
 
   public async Task<TodoDto?> GetTodoByIdAsync(int id)
   {
-    var todo = await _context.Todos.FindAsync(id);
+    int userId = GetUserId();
+    var todo = await _context.Todos
+        .FirstOrDefaultAsync(t => t.Id == id && t.UserId == userId);
+
     return todo != null ? MapToDto(todo) : null;
   }
 
@@ -31,22 +44,21 @@ public class TodoService(ApplicationDbContext context, ILogger<TodoService> logg
     {
       Title = createTodoDto.Title,
       Description = createTodoDto.Description,
-      IsCompleted = false,
-      CreatedAt = DateTime.UtcNow,
-      UpdatedAt = null
+      UserId = GetUserId(),
+      CreatedAt = DateTime.UtcNow
     };
 
     _context.Todos.Add(todo);
     await _context.SaveChangesAsync();
-
-    _logger.LogInformation("Todo created with ID: {TodoId}", todo.Id);
-
     return MapToDto(todo);
   }
 
   public async Task<TodoDto?> UpdateTodoAsync(int id, UpdateTodoDto updateTodoDto)
   {
-    var todo = await _context.Todos.FindAsync(id);
+    int userId = GetUserId();
+    var todo = await _context.Todos
+        .FirstOrDefaultAsync(t => t.Id == id && t.UserId == userId);
+
     if (todo == null)
       return null;
 
@@ -57,21 +69,21 @@ public class TodoService(ApplicationDbContext context, ILogger<TodoService> logg
 
     await _context.SaveChangesAsync();
 
-    _logger.LogInformation("Todo updated with ID: {TodoId}", id);
-
     return MapToDto(todo);
   }
 
   public async Task<bool> DeleteTodoAsync(int id)
   {
-    var todo = await _context.Todos.FindAsync(id);
+    int userId = GetUserId();
+
+    var todo = await _context.Todos
+        .FirstOrDefaultAsync(t => t.Id == id && t.UserId == userId);
+
     if (todo == null)
       return false;
 
     _context.Todos.Remove(todo);
     await _context.SaveChangesAsync();
-
-    _logger.LogInformation("Todo deleted with ID: {TodoId}", id);
 
     return true;
   }
