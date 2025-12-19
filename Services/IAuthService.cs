@@ -5,6 +5,6 @@ namespace FirstWebApi.Services;
 
 public interface IAuthService
 {
-  Task<ApiResponse<User>> RegisterAsync(RegisterDto registerDto);
-  Task<ApiResponse<AuthResponseDto>> LoginAsync(LoginDto loginDto);
+  Task<User> RegisterAsync(RegisterDto registerDto);
+  Task<AuthResponseDto> LoginAsync(LoginDto loginDto);
 }

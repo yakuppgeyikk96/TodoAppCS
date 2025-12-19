@@ -16,12 +16,13 @@ public class AuthController(IAuthService authService) : ControllerBase
   [ProducesResponseType(typeof(ApiResponse<User>), StatusCodes.Status400BadRequest)]
   public async Task<ActionResult<ApiResponse<User>>> Register(RegisterDto registerDto)
   {
-    var result = await _authService.RegisterAsync(registerDto);
+    if (!ModelState.IsValid)
+    {
+      return BadRequest(ApiResponse<User>.ErrorResponse("Validation failed", 400));
+    }
 
-    if (!result.Success)
-      return BadRequest(result);
-
-    return Ok(result);
+    var user = await _authService.RegisterAsync(registerDto);
+    return Ok(ApiResponse<User>.SuccessResponse(user, "User registered successfully"));
   }
 
   [HttpPost("login")]
@@ -29,11 +30,12 @@ public class AuthController(IAuthService authService) : ControllerBase
   [ProducesResponseType(typeof(ApiResponse<AuthResponseDto>), StatusCodes.Status401Unauthorized)]
   public async Task<ActionResult<ApiResponse<AuthResponseDto>>> Login(LoginDto loginDto)
   {
-    var result = await _authService.LoginAsync(loginDto);
+    if (!ModelState.IsValid)
+    {
+      return BadRequest(ApiResponse<AuthResponseDto>.ErrorResponse("Validation failed", 400));
+    }
 
-    if (!result.Success)
-      return Unauthorized(result);
-
-    return Ok(result);
+    var authResponse = await _authService.LoginAsync(loginDto);
+    return Ok(ApiResponse<AuthResponseDto>.SuccessResponse(authResponse, "Login successful"));
   }
 }

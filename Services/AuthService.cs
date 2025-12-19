@@ -9,6 +9,7 @@ using FirstWebApi.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using BC = BCrypt.Net.BCrypt;
+using FirstWebApi.Exceptions;
 
 namespace FirstWebApi.Services;
 
@@ -17,10 +18,17 @@ public class AuthService(ApplicationDbContext context, IConfiguration configurat
   private readonly ApplicationDbContext _context = context;
   private readonly IConfiguration _configuration = configuration;
 
-  public async Task<ApiResponse<User>> RegisterAsync(RegisterDto registerDto)
+  public async Task<User> RegisterAsync(RegisterDto registerDto) // Artık ApiResponse değil
   {
     if (await _context.Users.AnyAsync(u => u.Username == registerDto.Username))
-      return ApiResponse<User>.ErrorResponse("Username already exists");
+    {
+      throw new BadRequestException("Username already exists");
+    }
+
+    if (await _context.Users.AnyAsync(u => u.Email == registerDto.Email))
+    {
+      throw new BadRequestException("Email already exists");
+    }
 
     string passwordHash = BC.HashPassword(registerDto.Password);
 
@@ -34,26 +42,26 @@ public class AuthService(ApplicationDbContext context, IConfiguration configurat
     _context.Users.Add(user);
     await _context.SaveChangesAsync();
 
-    return ApiResponse<User>.SuccessResponse(user, "User registered successfully");
+    return user;
   }
 
-  public async Task<ApiResponse<AuthResponseDto>> LoginAsync(LoginDto loginDto)
+  public async Task<AuthResponseDto> LoginAsync(LoginDto loginDto) // Artık ApiResponse değil
   {
     var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == loginDto.Username);
 
     if (user == null || !BC.Verify(loginDto.Password, user.PasswordHash))
-      return ApiResponse<AuthResponseDto>.ErrorResponse("Invalid username or password");
+    {
+      throw new UnauthorizedException("Invalid username or password");
+    }
 
     string token = CreateToken(user);
 
-    return ApiResponse<AuthResponseDto>.SuccessResponse(new AuthResponseDto
+    return new AuthResponseDto
     {
       Token = token,
       Username = user.Username
-    }, "Login successful");
+    };
   }
-
-
 
   private string CreateToken(User user)
   {

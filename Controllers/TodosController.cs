@@ -29,18 +29,12 @@ public class TodosController(ITodoService todoService, ILogger<TodosController> 
   /// Gets a todo by id
   /// </summary>
   [HttpGet("{id}")]
-  [ProducesResponseType(typeof(TodoDto), StatusCodes.Status200OK)]
-  [ProducesResponseType(StatusCodes.Status404NotFound)]
+  [ProducesResponseType(typeof(ApiResponse<TodoDto>), StatusCodes.Status200OK)]
+  [ProducesResponseType(typeof(ApiResponse<TodoDto>), StatusCodes.Status404NotFound)]
   public async Task<ActionResult<ApiResponse<TodoDto>>> GetTodoById(int id)
   {
     var todo = await _todoService.GetTodoByIdAsync(id);
-
-    if (todo == null)
-    {
-      return NotFound(ApiResponse<TodoDto>.ErrorResponse($"Todo with id {id} not found", 404));
-    }
-
-    return Ok(ApiResponse<TodoDto>.SuccessResponse(todo));
+    return Ok(ApiResponse<TodoDto>.SuccessResponse(todo, "Todo retrieved successfully"));
   }
 
   /// <summary>
@@ -77,12 +71,6 @@ public class TodosController(ITodoService todoService, ILogger<TodosController> 
     }
 
     var todo = await _todoService.UpdateTodoAsync(id, updateTodoDto);
-
-    if (todo == null)
-    {
-      return NotFound(ApiResponse<TodoDto>.ErrorResponse($"Todo with id {id} not found", 404));
-    }
-
     return Ok(ApiResponse<TodoDto>.SuccessResponse(todo, "Todo updated successfully"));
   }
 
@@ -91,15 +79,10 @@ public class TodosController(ITodoService todoService, ILogger<TodosController> 
   /// </summary>
   [HttpDelete("{id}")]
   [ProducesResponseType(StatusCodes.Status204NoContent)]
-  [ProducesResponseType(StatusCodes.Status404NotFound)]
-  public async Task<ActionResult<ApiResponse<object>>> DeleteTodo(int id)
+  [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status404NotFound)]
+  public async Task<IActionResult> DeleteTodo(int id)
   {
-    var deleted = await _todoService.DeleteTodoAsync(id);
-    if (!deleted)
-    {
-      return NotFound(ApiResponse<object>.ErrorResponse($"Todo with id {id} not found", 404));
-    }
-
-    return Ok(ApiResponse<object>.SuccessResponse(null, "Todo deleted successfully"));
+    await _todoService.DeleteTodoAsync(id);
+    return NoContent();
   }
 }

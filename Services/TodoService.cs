@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using FirstWebApi.Data;
 using FirstWebApi.DTOs;
+using FirstWebApi.Exceptions;
 using FirstWebApi.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -29,13 +30,18 @@ public class TodoService(ApplicationDbContext context, IHttpContextAccessor http
     return todos.Select(MapToDto);
   }
 
-  public async Task<TodoDto?> GetTodoByIdAsync(int id)
+  public async Task<TodoDto> GetTodoByIdAsync(int id)
   {
     int userId = GetUserId();
     var todo = await _context.Todos
         .FirstOrDefaultAsync(t => t.Id == id && t.UserId == userId);
 
-    return todo != null ? MapToDto(todo) : null;
+    if (todo == null)
+    {
+      throw new NotFoundException($"Todo with id {id} not found");
+    }
+
+    return MapToDto(todo);
   }
 
   public async Task<TodoDto> CreateTodoAsync(CreateTodoDto createTodoDto)
@@ -53,14 +59,16 @@ public class TodoService(ApplicationDbContext context, IHttpContextAccessor http
     return MapToDto(todo);
   }
 
-  public async Task<TodoDto?> UpdateTodoAsync(int id, UpdateTodoDto updateTodoDto)
+  public async Task<TodoDto> UpdateTodoAsync(int id, UpdateTodoDto updateTodoDto)
   {
     int userId = GetUserId();
     var todo = await _context.Todos
         .FirstOrDefaultAsync(t => t.Id == id && t.UserId == userId);
 
     if (todo == null)
-      return null;
+    {
+      throw new NotFoundException($"Todo with id {id} not found");
+    }
 
     todo.Title = updateTodoDto.Title;
     todo.Description = updateTodoDto.Description;
@@ -72,7 +80,7 @@ public class TodoService(ApplicationDbContext context, IHttpContextAccessor http
     return MapToDto(todo);
   }
 
-  public async Task<bool> DeleteTodoAsync(int id)
+  public async Task DeleteTodoAsync(int id)
   {
     int userId = GetUserId();
 
@@ -80,12 +88,12 @@ public class TodoService(ApplicationDbContext context, IHttpContextAccessor http
         .FirstOrDefaultAsync(t => t.Id == id && t.UserId == userId);
 
     if (todo == null)
-      return false;
+    {
+      throw new NotFoundException($"Todo with id {id} not found");
+    }
 
     _context.Todos.Remove(todo);
     await _context.SaveChangesAsync();
-
-    return true;
   }
 
   private static TodoDto MapToDto(Todo todo)
