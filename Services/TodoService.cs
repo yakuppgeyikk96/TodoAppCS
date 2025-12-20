@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using AutoMapper;
 using FirstWebApi.Data;
 using FirstWebApi.DTOs;
 using FirstWebApi.Exceptions;
@@ -7,10 +8,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FirstWebApi.Services;
 
-public class TodoService(ApplicationDbContext context, IHttpContextAccessor httpContextAccessor) : ITodoService
+public class TodoService(ApplicationDbContext context, IHttpContextAccessor httpContextAccessor, IMapper mapper) : ITodoService
 {
   private readonly ApplicationDbContext _context = context;
   private readonly IHttpContextAccessor _httpContextAccessor = httpContextAccessor;
+  private readonly IMapper _mapper = mapper;
 
   private int GetUserId()
   {
@@ -27,7 +29,7 @@ public class TodoService(ApplicationDbContext context, IHttpContextAccessor http
       .Where(t => t.UserId == userId)
       .ToListAsync();
 
-    return todos.Select(MapToDto);
+    return _mapper.Map<IEnumerable<TodoDto>>(todos);
   }
 
   public async Task<TodoDto> GetTodoByIdAsync(int id)
@@ -41,22 +43,21 @@ public class TodoService(ApplicationDbContext context, IHttpContextAccessor http
       throw new NotFoundException($"Todo with id {id} not found");
     }
 
-    return MapToDto(todo);
+    return _mapper.Map<TodoDto>(todo);
   }
 
   public async Task<TodoDto> CreateTodoAsync(CreateTodoDto createTodoDto)
   {
-    var todo = new Todo
-    {
-      Title = createTodoDto.Title,
-      Description = createTodoDto.Description,
-      UserId = GetUserId(),
-      CreatedAt = DateTime.UtcNow
-    };
+    var todo = _mapper.Map<Todo>(createTodoDto);
+
+    todo.UserId = GetUserId();
+    todo.CreatedAt = DateTime.UtcNow;
 
     _context.Todos.Add(todo);
+
     await _context.SaveChangesAsync();
-    return MapToDto(todo);
+
+    return _mapper.Map<TodoDto>(todo);
   }
 
   public async Task<TodoDto> UpdateTodoAsync(int id, UpdateTodoDto updateTodoDto)
@@ -70,14 +71,13 @@ public class TodoService(ApplicationDbContext context, IHttpContextAccessor http
       throw new NotFoundException($"Todo with id {id} not found");
     }
 
-    todo.Title = updateTodoDto.Title;
-    todo.Description = updateTodoDto.Description;
-    todo.IsCompleted = updateTodoDto.IsCompleted;
+    _mapper.Map(updateTodoDto, todo);
+
     todo.UpdatedAt = DateTime.UtcNow;
 
     await _context.SaveChangesAsync();
 
-    return MapToDto(todo);
+    return _mapper.Map<TodoDto>(todo);
   }
 
   public async Task DeleteTodoAsync(int id)
@@ -96,16 +96,4 @@ public class TodoService(ApplicationDbContext context, IHttpContextAccessor http
     await _context.SaveChangesAsync();
   }
 
-  private static TodoDto MapToDto(Todo todo)
-  {
-    return new TodoDto
-    {
-      Id = todo.Id,
-      Title = todo.Title,
-      Description = todo.Description,
-      IsCompleted = todo.IsCompleted,
-      CreatedAt = todo.CreatedAt,
-      UpdatedAt = todo.UpdatedAt
-    };
-  }
 }

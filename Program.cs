@@ -1,5 +1,6 @@
 using System.Text;
 using FirstWebApi.Data;
+using FirstWebApi.Mappings;
 using FirstWebApi.Middleware;
 using FirstWebApi.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -11,6 +12,9 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddOpenApi();
+
+/* Mappers */
+builder.Services.AddAutoMapper(typeof(TodoMappingProfile));
 
 builder.Services.AddDbContext<ApplicationDbContext>(
     options => options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"))
