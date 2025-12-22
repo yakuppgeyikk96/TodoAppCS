@@ -21,15 +21,46 @@ public class TodoService(ApplicationDbContext context, IHttpContextAccessor http
     return int.Parse(userIdClaim ?? "0");
   }
 
-  public async Task<IEnumerable<TodoDto>> GetAllTodosAsync()
+  public async Task<ApiResponse<IEnumerable<TodoDto>>> GetAllTodosAsync(
+    PaginationParams paginationParams,
+    TodoFilterParams? filterParams = null
+  )
   {
     int userId = GetUserId();
 
-    var todos = await _context.Todos
+    var query = _context.Todos
       .Where(t => t.UserId == userId)
+      .AsQueryable();
+
+    if (!string.IsNullOrWhiteSpace(filterParams?.SearchTerm))
+    {
+      var searchTerm = filterParams.SearchTerm.Trim().ToLower();
+      query = query
+      .Where(
+        t => t.Title.ToLower().Contains(searchTerm) ||
+        t.Description.ToLower().Contains(searchTerm)
+      );
+    }
+
+    var totalCount = await query.CountAsync();
+
+    query = query.OrderByDescending(t => t.CreatedAt);
+
+    var todos = await query
+      .Skip((paginationParams.Page - 1) * paginationParams.PageSize)
+      .Take(paginationParams.PageSize)
       .ToListAsync();
 
-    return _mapper.Map<IEnumerable<TodoDto>>(todos);
+    var todoDtos = _mapper.Map<IEnumerable<TodoDto>>(todos);
+
+    var pagination = new Pagination
+    {
+      Page = paginationParams.Page,
+      PageSize = paginationParams.PageSize,
+      TotalCount = totalCount
+    };
+
+    return ApiResponse<IEnumerable<TodoDto>>.SuccessPagedResponse(todoDtos, pagination);
   }
 
   public async Task<TodoDto> GetTodoByIdAsync(int id)
@@ -95,5 +126,4 @@ public class TodoService(ApplicationDbContext context, IHttpContextAccessor http
     _context.Todos.Remove(todo);
     await _context.SaveChangesAsync();
   }
-
 }

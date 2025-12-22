@@ -2,6 +2,7 @@ using FirstWebApi.DTOs;
 using FirstWebApi.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using FirstWebApi.Models;
 
 namespace FirstWebApi.Controllers;
 
@@ -18,11 +19,13 @@ public class TodosController(ITodoService todoService, ILogger<TodosController> 
   /// Gets all todos
   /// </summary>
   [HttpGet]
-  [ProducesResponseType(typeof(IEnumerable<TodoDto>), StatusCodes.Status200OK)]
-  public async Task<ActionResult<ApiResponse<IEnumerable<TodoDto>>>> GetAllTodos()
+  [ProducesResponseType(typeof(ApiResponse<IEnumerable<TodoDto>>), StatusCodes.Status200OK)]
+  public async Task<ActionResult<ApiResponse<IEnumerable<TodoDto>>>> GetAllTodos(
+    [FromQuery] PaginationParams paginationParams,
+    [FromQuery] TodoFilterParams? filterParams = null)
   {
-    var todos = await _todoService.GetAllTodosAsync();
-    return Ok(ApiResponse<IEnumerable<TodoDto>>.SuccessResponse(todos));
+    var result = await _todoService.GetAllTodosAsync(paginationParams, filterParams);
+    return Ok(result); // Artık Service'ten direkt ApiResponse dönüyor
   }
 
   /// <summary>

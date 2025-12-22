@@ -2,6 +2,7 @@
 using System.Net;
 using System.Text.Json;
 using FirstWebApi.Exceptions;
+using FirstWebApi.Models;
 
 namespace FirstWebApi.Middleware;
 

@@ -1,4 +1,4 @@
-
+namespace FirstWebApi.Models;
 
 public class ApiResponse<T>
 {
@@ -6,6 +6,7 @@ public class ApiResponse<T>
   public int Status { get; set; }
   public T? Data { get; set; }
   public string? Message { get; set; } = string.Empty;
+  public Pagination? Pagination { get; set; }
 
   public static ApiResponse<T> SuccessResponse(T? data, string message = "Operation successful", int status = 200)
   {
@@ -14,7 +15,23 @@ public class ApiResponse<T>
       Success = true,
       Status = status,
       Data = data,
-      Message = message
+      Message = message,
+      Pagination = null
+    };
+  }
+  public static ApiResponse<T> SuccessPagedResponse(
+        T? data,
+        Pagination pagination,
+        string message = "Operation successful",
+        int status = 200)
+  {
+    return new ApiResponse<T>
+    {
+      Success = true,
+      Status = status,
+      Data = data,
+      Message = message,
+      Pagination = pagination
     };
   }
 
@@ -25,7 +42,8 @@ public class ApiResponse<T>
       Success = false,
       Status = status,
       Data = default,
-      Message = message
+      Message = message,
+      Pagination = null
     };
   }
 }
