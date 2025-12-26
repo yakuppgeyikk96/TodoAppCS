@@ -17,7 +17,10 @@ builder.Services.AddControllers();
 
 builder.Services.AddFluentValidationAutoValidation()
     .AddFluentValidationClientsideAdapters()
-    .AddValidatorsFromAssemblyContaining<RegisterDtoValidator>();
+    .AddValidatorsFromAssemblyContaining<RegisterDtoValidator>()
+    .AddValidatorsFromAssemblyContaining<LoginDtoValidator>()
+    .AddValidatorsFromAssemblyContaining<CreateTodoDtoValidator>()
+    .AddValidatorsFromAssemblyContaining<UpdateTodoDtoValidator>();
 
 builder.Services.AddEndpointsApiExplorer();
 
