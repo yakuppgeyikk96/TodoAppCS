@@ -18,7 +18,15 @@ public class AuthController(IAuthService authService) : ControllerBase
   {
     if (!ModelState.IsValid)
     {
-      return BadRequest(ApiResponse<User>.ErrorResponse("Validation failed", 400));
+      var errors = ModelState
+        .Where(x => x.Value?.Errors.Count > 0)
+        .SelectMany(x => x.Value!.Errors)
+        .Select(e => e.ErrorMessage)
+        .ToList();
+
+      return BadRequest(ApiResponse<User>.ErrorResponse(
+          $"Validation failed: {string.Join(", ", errors)}",
+          400));
     }
 
     var user = await _authService.RegisterAsync(registerDto);

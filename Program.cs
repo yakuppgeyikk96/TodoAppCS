@@ -3,15 +3,23 @@ using FirstWebApi.Data;
 using FirstWebApi.Mappings;
 using FirstWebApi.Middleware;
 using FirstWebApi.Services;
+using FirstWebApi.Validators;
+using FluentValidation;
+using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
+
+builder.Services.AddFluentValidationAutoValidation()
+    .AddFluentValidationClientsideAdapters()
+    .AddValidatorsFromAssemblyContaining<RegisterDtoValidator>();
+
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddOpenApi();
 
 /* Mappers */
 builder.Services.AddAutoMapper(typeof(TodoMappingProfile));
@@ -43,12 +51,6 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.MapOpenApi();
-}
-
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 app.UseHttpsRedirection();
@@ -58,6 +60,4 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-
 app.Run();
-
