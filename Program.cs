@@ -2,6 +2,7 @@ using System.Text;
 using FirstWebApi.Data;
 using FirstWebApi.Mappings;
 using FirstWebApi.Middleware;
+using FirstWebApi.Repositories;
 using FirstWebApi.Services;
 using FirstWebApi.Validators;
 using FluentValidation;
@@ -9,7 +10,6 @@ using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,10 +17,7 @@ builder.Services.AddControllers();
 
 builder.Services.AddFluentValidationAutoValidation()
     .AddFluentValidationClientsideAdapters()
-    .AddValidatorsFromAssemblyContaining<RegisterDtoValidator>()
-    .AddValidatorsFromAssemblyContaining<LoginDtoValidator>()
-    .AddValidatorsFromAssemblyContaining<CreateTodoDtoValidator>()
-    .AddValidatorsFromAssemblyContaining<UpdateTodoDtoValidator>();
+    .AddValidatorsFromAssemblyContaining<RegisterDtoValidator>();
 
 builder.Services.AddEndpointsApiExplorer();
 
@@ -48,6 +45,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 
 builder.Services.AddHttpContextAccessor();
+
+/* Repositories */
+builder.Services.AddScoped<IUserRepository, UserRepository>();
 
 builder.Services.AddScoped<ITodoService, TodoService>();
 builder.Services.AddScoped<IAuthService, AuthService>();

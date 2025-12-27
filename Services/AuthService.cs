@@ -1,31 +1,29 @@
-
-
+// Services/AuthService.cs
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using FirstWebApi.Data;
 using FirstWebApi.DTOs;
 using FirstWebApi.Models;
-using Microsoft.EntityFrameworkCore;
+using FirstWebApi.Repositories;
 using Microsoft.IdentityModel.Tokens;
 using BC = BCrypt.Net.BCrypt;
 using FirstWebApi.Exceptions;
 
 namespace FirstWebApi.Services;
 
-public class AuthService(ApplicationDbContext context, IConfiguration configuration) : IAuthService
+public class AuthService(IUserRepository userRepository, IConfiguration configuration) : IAuthService
 {
-  private readonly ApplicationDbContext _context = context;
+  private readonly IUserRepository _userRepository = userRepository;
   private readonly IConfiguration _configuration = configuration;
 
-  public async Task<User> RegisterAsync(RegisterDto registerDto) // Artık ApiResponse değil
+  public async Task<User> RegisterAsync(RegisterDto registerDto)
   {
-    if (await _context.Users.AnyAsync(u => u.Username == registerDto.Username))
+    if (await _userRepository.ExistsByUsernameAsync(registerDto.Username))
     {
       throw new BadRequestException("Username already exists");
     }
 
-    if (await _context.Users.AnyAsync(u => u.Email == registerDto.Email))
+    if (await _userRepository.ExistsByEmailAsync(registerDto.Email))
     {
       throw new BadRequestException("Email already exists");
     }
@@ -39,15 +37,15 @@ public class AuthService(ApplicationDbContext context, IConfiguration configurat
       PasswordHash = passwordHash
     };
 
-    _context.Users.Add(user);
-    await _context.SaveChangesAsync();
+    await _userRepository.AddAsync(user);
+    await _userRepository.SaveChangesAsync();
 
     return user;
   }
 
-  public async Task<AuthResponseDto> LoginAsync(LoginDto loginDto) // Artık ApiResponse değil
+  public async Task<AuthResponseDto> LoginAsync(LoginDto loginDto)
   {
-    var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == loginDto.Username);
+    var user = await _userRepository.GetByUsernameAsync(loginDto.Username);
 
     if (user == null || !BC.Verify(loginDto.Password, user.PasswordHash))
     {

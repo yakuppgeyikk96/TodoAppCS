@@ -1,3 +1,4 @@
+// Controllers/AuthController.cs
 using FirstWebApi.DTOs;
 using FirstWebApi.Models;
 using FirstWebApi.Services;
@@ -16,19 +17,6 @@ public class AuthController(IAuthService authService) : ControllerBase
   [ProducesResponseType(typeof(ApiResponse<User>), StatusCodes.Status400BadRequest)]
   public async Task<ActionResult<ApiResponse<User>>> Register(RegisterDto registerDto)
   {
-    if (!ModelState.IsValid)
-    {
-      var errors = ModelState
-        .Where(x => x.Value?.Errors.Count > 0)
-        .SelectMany(x => x.Value!.Errors)
-        .Select(e => e.ErrorMessage)
-        .ToList();
-
-      return BadRequest(ApiResponse<User>.ErrorResponse(
-          $"Validation failed: {string.Join(", ", errors)}",
-          400));
-    }
-
     var user = await _authService.RegisterAsync(registerDto);
     return Ok(ApiResponse<User>.SuccessResponse(user, "User registered successfully"));
   }
@@ -38,11 +26,6 @@ public class AuthController(IAuthService authService) : ControllerBase
   [ProducesResponseType(typeof(ApiResponse<AuthResponseDto>), StatusCodes.Status401Unauthorized)]
   public async Task<ActionResult<ApiResponse<AuthResponseDto>>> Login(LoginDto loginDto)
   {
-    if (!ModelState.IsValid)
-    {
-      return BadRequest(ApiResponse<AuthResponseDto>.ErrorResponse("Validation failed", 400));
-    }
-
     var authResponse = await _authService.LoginAsync(loginDto);
     return Ok(ApiResponse<AuthResponseDto>.SuccessResponse(authResponse, "Login successful"));
   }
