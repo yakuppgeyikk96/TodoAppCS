@@ -48,6 +48,7 @@ builder.Services.AddHttpContextAccessor();
 
 /* Repositories */
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<ITodoRepository, TodoRepository>();
 
 builder.Services.AddScoped<ITodoService, TodoService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
